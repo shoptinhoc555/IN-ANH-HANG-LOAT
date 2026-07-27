@@ -16,26 +16,29 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
         background-color: #f8fafc;
     }
+    /* Sửa lỗi cuộn mượt cho Iframe Streamlit trên iOS/Android */
+    iframe {
+        max-width: 100% !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
     .brand-container {
         text-align: center;
         padding: 15px 10px;
         background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
         border-radius: 16px;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3);
     }
     .main-title {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
         color: #ffffff;
         font-weight: 800;
         margin: 0;
-        letter-spacing: -0.5px;
     }
     .sub-title {
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         color: #bfdbfe;
-        margin-top: 5px;
-        font-weight: 400;
+        margin-top: 4px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -48,25 +51,36 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- 3. MÃ HTML/JS CHỨC NĂNG IN HÀNG LOẠT (TỐI ƯU MOBILE) ---
+# --- 3. MÃ HTML/JS CHỨC NĂNG IN HÀNG LOẠT (TỐI ƯU CUỘN MOBILE) ---
 html_code = """<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        * { box-sizing: border-box; }
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        html {
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
             background: #f4f6f8; 
-            margin: 0; padding: 10px;
-            display: flex; justify-content: center;
+            margin: 0; 
+            padding: 10px 5px 40px 5px;
+            min-height: 100%;
+            overscroll-behavior-y: contain;
         }
         .container { 
-            background: #ffffff; padding: 15px; border-radius: 16px; 
+            background: #ffffff; padding: 12px; border-radius: 16px; 
             box-shadow: 0 4px 20px rgba(0,0,0,0.06); max-width: 850px; width: 100%; text-align: center;
+            margin: 0 auto;
         }
-        h2 { color: #2c3e50; font-weight: 800; text-transform: uppercase; font-size: 16px; margin-bottom: 15px; margin-top: 5px;}
+        h2 { color: #2c3e50; font-weight: 800; text-transform: uppercase; font-size: 15px; margin-bottom: 12px; margin-top: 5px;}
         
         .upload-grid {
             display: grid;
@@ -87,7 +101,6 @@ html_code = """<!DOCTYPE html>
             border-radius: 6px; font-size: 13px; outline: none; text-align: center; display: block;
         }
         
-        /* Tối ưu Upload File cho Mobile: Ẩn ẩn bằng opacity thay vì display:none */
         .file-upload-wrapper {
             position: relative;
             display: inline-block;
@@ -125,7 +138,7 @@ html_code = """<!DOCTYPE html>
             font-weight: bold; cursor: pointer; display: none; align-items: center; justify-content: center;
             z-index: 10;
         }
-        .btn-group { display: flex; flex-direction: column; gap: 8px; margin-top: 20px;}
+        .btn-group { display: flex; flex-direction: column; gap: 8px; margin-top: 15px;}
         @media (min-width: 600px) { .btn-group { flex-direction: row; } }
         
         .btn { 
@@ -352,5 +365,5 @@ html_code = """<!DOCTYPE html>
 </body>
 </html>"""
 
-# Hiển thị giao diện với chiều cao điều chỉnh linh hoạt trên di động
-components.html(html_code, height=2200, scrolling=True)
+# Bật scrolling=True và cấp chiều cao đủ lớn để trang tự động nhận diện cuộn mượt
+components.html(html_code, height=2600, scrolling=True)
