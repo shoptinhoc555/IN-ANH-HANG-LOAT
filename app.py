@@ -18,21 +18,21 @@ st.markdown("""
     }
     .brand-container {
         text-align: center;
-        padding: 20px 10px;
+        padding: 15px 10px;
         background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
         border-radius: 16px;
-        margin-bottom: 25px;
+        margin-bottom: 20px;
         box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.3);
     }
     .main-title {
-        font-size: 2rem;
+        font-size: 1.5rem;
         color: #ffffff;
         font-weight: 800;
         margin: 0;
         letter-spacing: -0.5px;
     }
     .sub-title {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         color: #bfdbfe;
         margin-top: 5px;
         font-weight: 400;
@@ -48,77 +48,99 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- 3. MÃ HTML/JS CHỨC NĂNG IN HÀNG LOẠT ---
+# --- 3. MÃ HTML/JS CHỨC NĂNG IN HÀNG LOẠT (TỐI ƯU MOBILE) ---
 html_code = """<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
+        * { box-sizing: border-box; }
         body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); 
-            display: flex; justify-content: center; align-items: flex-start; 
-            min-height: auto; margin: 0; padding: 10px 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: #f4f6f8; 
+            margin: 0; padding: 10px;
+            display: flex; justify-content: center;
         }
         .container { 
-            background: #ffffff; padding: 25px 35px; border-radius: 20px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08); max-width: 850px; width: 100%; text-align: center;
-            margin-top: 0;
+            background: #ffffff; padding: 15px; border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06); max-width: 850px; width: 100%; text-align: center;
         }
-        h2 { color: #2c3e50; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; margin-top: 0;}
-        .upload-group { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 15px;}
+        h2 { color: #2c3e50; font-weight: 800; text-transform: uppercase; font-size: 16px; margin-bottom: 15px; margin-top: 5px;}
+        
+        .upload-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        @media (max-width: 600px) {
+            .upload-grid { grid-template-columns: 1fr; }
+        }
+
         .person-box { 
-            flex: 1; border: 2px dashed #b8c2cc; padding: 12px 10px; border-radius: 14px; 
-            background: #fafafa; transition: all 0.3s ease; position: relative; text-align: center;
+            border: 1.5px dashed #b8c2cc; padding: 10px; border-radius: 12px; 
+            background: #fafafa; text-align: center; position: relative;
         }
-        .person-box:hover { border-color: #007bff; background: #f0f7ff;}
-        .person-box h4 { margin: 0 0 8px 0; color: #0056b3; font-size: 15px; font-weight: 700;}
+        .person-box h4 { margin: 0 0 6px 0; color: #0056b3; font-size: 14px; font-weight: 700;}
         .name-input {
-            width: 85%; padding: 6px 10px; margin: 6px auto; border: 1px solid #ced4da;
+            width: 90%; padding: 8px; margin: 4px auto; border: 1px solid #ced4da;
             border-radius: 6px; font-size: 13px; outline: none; text-align: center; display: block;
         }
-        .name-input:focus { border-color: #007bff; box-shadow: 0 0 4px rgba(0,123,255,0.2); }
-        .qty-area {
-            margin-top: 8px; background: #eee; padding: 8px; border-radius: 8px;
-            display: flex; flex-direction: column; gap: 6px;
+        
+        /* Tối ưu Upload File cho Mobile: Ẩn ẩn bằng opacity thay vì display:none */
+        .file-upload-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 90%;
+            margin: 4px auto;
         }
-        .qty-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: bold; color: #444;}
-        .qty-row input { width: 50px; text-align: center; padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-weight: bold;}
-        .badge { color: white; padding: 3px 6px; border-radius: 4px; font-size: 11px;}
+        .custom-file-upload { 
+            display: block; padding: 8px 10px; cursor: pointer; background-color: #edf2f7; 
+            color: #4a5568; border-radius: 8px; font-weight: 600; font-size: 12px; 
+            border: 1px solid #cbd5e0; text-align: center;
+        }
+        .real-file-input {
+            position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+            opacity: 0; cursor: pointer; font-size: 0;
+        }
+
+        .qty-area {
+            margin-top: 6px; background: #edf2f7; padding: 6px; border-radius: 8px;
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        .qty-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: bold; color: #444;}
+        .qty-row input { width: 55px; text-align: center; padding: 4px; border-radius: 4px; border: 1px solid #ccc; font-size: 13px; font-weight: bold;}
+        .badge { color: white; padding: 2px 5px; border-radius: 4px; font-size: 10px;}
         .bg-3x4 { background: #007bff; }
         .bg-4x6 { background: #28a745; }
-        input[type="file"] { display: none; }
-        .custom-file-upload { 
-            display: inline-block; padding: 8px 12px; cursor: pointer; background-color: #edf2f7; 
-            color: #4a5568; border-radius: 8px; font-weight: 600; font-size: 12px; 
-            border: 1px solid #e2e8f0; width: 85%; margin: 0 auto;
-        }
-        .custom-file-upload:hover { background-color: #e2e8f0; }
-        .img-wrapper { position: relative; display: inline-block; margin-top: 8px; }
+
+        .img-wrapper { position: relative; display: inline-block; margin-top: 6px; }
         .preview { 
-            max-width: 80px; max-height: 100px; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); 
+            max-width: 70px; max-height: 90px; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); 
             border: 2px solid #fff; display: none; object-fit: cover;
         }
         .clear-btn { 
-            position: absolute; top: -8px; right: -8px; background: #ff4757; color: white; 
-            border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; 
+            position: absolute; top: -6px; right: -6px; background: #ff4757; color: white; 
+            border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 11px; 
             font-weight: bold; cursor: pointer; display: none; align-items: center; justify-content: center;
+            z-index: 10;
         }
-        .btn-group { display: flex; gap: 12px; justify-content: center; margin-top: 25px;}
+        .btn-group { display: flex; flex-direction: column; gap: 8px; margin-top: 20px;}
+        @media (min-width: 600px) { .btn-group { flex-direction: row; } }
+        
         .btn { 
-            border-radius: 50px; padding: 14px 20px; font-size: 14px; font-weight: 700; 
-            text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; color: white; border: none; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: all 0.3s ease; flex: 1; 
+            border-radius: 12px; padding: 12px 15px; font-size: 13px; font-weight: 700; 
+            text-transform: uppercase; cursor: pointer; color: white; border: none; 
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1); transition: all 0.2s ease; flex: 1; 
         }
         #previewBtn { background: linear-gradient(135deg, #36D1DC 0%, #5B86E5 100%); }
         #downloadBtn { background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); display: none; }
         #directPrintBtn { background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%); display: none; }
-        #previewContainer { display: none; margin-top: 30px; border-top: 2px dashed #e2e8f0; padding-top: 20px; }
-        #previewContainer h4 { color: #4a5568; margin-bottom: 20px; font-weight: 700;}
+        #previewContainer { display: none; margin-top: 20px; border-top: 2px dashed #e2e8f0; padding-top: 15px; }
+        #previewContainer h4 { color: #4a5568; margin-bottom: 15px; font-size: 14px;}
         .a4-page-preview {
             position: relative; width: 100%; max-width: 480px; background: white; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); margin: 0 auto 30px auto; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15); margin: 0 auto 20px auto; 
             border: 1px solid #ccc; overflow: hidden; border-radius: 4px;
         }
         .label-text-style {
@@ -130,32 +152,30 @@ html_code = """<!DOCTYPE html>
 </head>
 <body>
     <div class="container">
-        <h2>DANH SÁCH ẢNH CẦN XẾP IN HỒ SƠ A4 (10 NGƯỜI)</h2>
+        <h2>DANH SÁCH ẢNH IN HỒ SƠ (10 NGƯỜI)</h2>
         
-        <!-- Danh sách 10 ô nhập học viên -->
-        <script>
-            document.write(Array.from({length: 10}, (_, i) => {
-                const num = i + 1;
-                const isOdd = num % 2 !== 0;
-                let html = '';
-                if (isOdd) html += '<div class="upload-group">';
-                html += `
-                    <div class="person-box">
-                        <h4>👤 Người thứ ${num}</h4>
-                        <input type="text" id="name${num}" class="name-input" placeholder="Nhập tên học viên...">
-                        <label for="imgInput${num}" class="custom-file-upload" id="labelInput${num}">📁 Chọn Ảnh...</label>
-                        <input type="file" id="imgInput${num}" accept="image/png, image/jpeg, image/jpg">
-                        <center><div class="img-wrapper"><img id="preview${num}" class="preview" alt="Preview ${num}"><button id="clearBtn${num}" class="clear-btn">✖</button></div></center>
-                        <div class="qty-area">
-                            <div class="qty-row"><span><span class="badge bg-3x4">3x4</span> SL:</span><input type="number" id="qty3x4_${num}" value="${num <= 2 ? 9 : 0}" min="0" max="24"></div>
-                            <div class="qty-row"><span><span class="badge bg-4x6">4x6</span> SL:</span><input type="number" id="qty4x6_${num}" value="0" min="0" max="24"></div>
+        <div class="upload-grid">
+            <script>
+                document.write(Array.from({length: 10}, (_, i) => {
+                    const num = i + 1;
+                    return `
+                        <div class="person-box">
+                            <h4>👤 Người thứ ${num}</h4>
+                            <input type="text" id="name${num}" class="name-input" placeholder="Nhập tên học viên...">
+                            <div class="file-upload-wrapper">
+                                <span class="custom-file-upload" id="labelInput${num}">📁 Chọn Ảnh...</span>
+                                <input type="file" id="imgInput${num}" class="real-file-input" accept="image/*">
+                            </div>
+                            <center><div class="img-wrapper"><img id="preview${num}" class="preview" alt="Preview ${num}"><button id="clearBtn${num}" class="clear-btn">✖</button></div></center>
+                            <div class="qty-area">
+                                <div class="qty-row"><span><span class="badge bg-3x4">3x4</span> SL:</span><input type="number" id="qty3x4_${num}" value="${num <= 2 ? 9 : 0}" min="0" max="24"></div>
+                                <div class="qty-row"><span><span class="badge bg-4x6">4x6</span> SL:</span><input type="number" id="qty4x6_${num}" value="0" min="0" max="24"></div>
+                            </div>
                         </div>
-                    </div>
-                `;
-                if (!isOdd || num === 10) html += '</div>';
-                return html;
-            }).join(''));
-        </script>
+                    `;
+                }).join(''));
+            </script>
+        </div>
 
         <div class="btn-group">
             <button id="previewBtn" class="btn">👁️ Xem Trước Bản Xếp</button>
@@ -189,7 +209,8 @@ html_code = """<!DOCTYPE html>
                     reader.readAsDataURL(file);
                 }
             });
-            document.getElementById(clearBtnId).addEventListener('click', function() {
+            document.getElementById(clearBtnId).addEventListener('click', function(e) {
+                e.stopPropagation();
                 document.getElementById(inputId).value = "";
                 document.getElementById(previewId).style.display = 'none';
                 document.getElementById(previewId).src = "";
@@ -288,8 +309,8 @@ html_code = """<!DOCTYPE html>
             });
             document.getElementById('pdfIframeContainer').innerHTML = pagesHtml;
             document.getElementById('previewContainer').style.display = 'block';
-            document.getElementById('downloadBtn').style.display = 'inline-block';
-            document.getElementById('directPrintBtn').style.display = 'inline-block';
+            document.getElementById('downloadBtn').style.display = 'block';
+            document.getElementById('directPrintBtn').style.display = 'block';
         });
 
         function generateJsPDFObject() {
@@ -324,12 +345,12 @@ html_code = """<!DOCTYPE html>
             if (printWindow) { 
                 printWindow.onload = function() { printWindow.focus(); printWindow.print(); }; 
             } else { 
-                alert("Vui lòng cho phép Pop-up trên trình duyệt để in trực tiếp!"); 
+                alert("Vui lòng cho phép Pop-up trên trình duyệt di động để in!"); 
             }
         });
     </script>
 </body>
 </html>"""
 
-# Hiển thị trực tiếp giao diện in hàng loạt
-components.html(html_code, height=1850, scrolling=True)
+# Hiển thị giao diện với chiều cao điều chỉnh linh hoạt trên di động
+components.html(html_code, height=2200, scrolling=True)
