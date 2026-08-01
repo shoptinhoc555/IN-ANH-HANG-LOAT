@@ -1,4 +1,6 @@
 streamlit
+opencv-python-headless
+python-docx
 Pillow
-onnxruntime
-numpy<2.0.0
+numpy
+pytesseract
