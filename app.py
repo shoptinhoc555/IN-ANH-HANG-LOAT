@@ -8,7 +8,7 @@ st.set_page_config(
     page_icon="🖨️"
 )
 
-# --- GIAO DIỆN VÀ MODUL XẾP IN HÀNG LOẠT ---
+# --- GIAO DIỆN VÀ MODULE XẾP IN HÀNG LOẠT ---
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
@@ -41,7 +41,7 @@ html_code = """<!DOCTYPE html>
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             background: #f8fafc; 
             display: flex; justify-content: center; align-items: flex-start; 
-            margin: 0; padding: 10px 0;
+            min-height: auto; margin: 0; padding: 10px 0;
         }
         .container { 
             background: #ffffff; padding: 25px 35px; border-radius: 16px; 
@@ -124,7 +124,7 @@ html_code = """<!DOCTYPE html>
                         <input type="file" id="imgInput${i}" accept="image/png, image/jpeg, image/jpg">
                         <center><div class="img-wrapper"><img id="preview${i}" class="preview" alt="Preview ${i}"><button id="clearBtn${i}" class="clear-btn">✖</button></div></center>
                         <div class="qty-area">
-                            <div class="qty-row"><span><span class="badge bg-3x4">3x4</span> SL:</span><input type="number" id="qty3x4_${i}" value="${i <= 2 ? 7 : 0}" min="0" max="28"></div>
+                            <div class="qty-row"><span><span class="badge bg-3x4">3x4</span> SL:</span><input type="number" id="qty3x4_${i}" value="${i <= 2 ? 8 : 0}" min="0" max="28"></div>
                             <div class="qty-row"><span><span class="badge bg-4x6">4x6</span> SL:</span><input type="number" id="qty4x6_${i}" value="0" min="0" max="28"></div>
                         </div>
                     </div>
@@ -135,7 +135,7 @@ html_code = """<!DOCTYPE html>
                         <input type="file" id="imgInput${i+1}" accept="image/png, image/jpeg, image/jpg">
                         <center><div class="img-wrapper"><img id="preview${i+1}" class="preview" alt="Preview ${i+1}"><button id="clearBtn${i+1}" class="clear-btn">✖</button></div></center>
                         <div class="qty-area">
-                            <div class="qty-row"><span><span class="badge bg-3x4">3x4</span> SL:</span><input type="number" id="qty3x4_${i+1}" value="${i <= 2 ? 7 : 0}" min="0" max="28"></div>
+                            <div class="qty-row"><span><span class="badge bg-3x4">3x4</span> SL:</span><input type="number" id="qty3x4_${i+1}" value="${i <= 2 ? 8 : 0}" min="0" max="28"></div>
                             <div class="qty-row"><span><span class="badge bg-4x6">4x6</span> SL:</span><input type="number" id="qty4x6_${i+1}" value="0" min="0" max="28"></div>
                         </div>
                     </div>
