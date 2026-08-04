@@ -223,12 +223,12 @@ def crop_vneid_combined_block(pil_img):
 
 
 # ---------------------------------------------------------
-# KHỞI TẠO TABS GIAO DIỆN (ĐÃ ĐẶT TRƯỚC WITH TAB)
+# KHỞI TẠO TABS GIAO DIỆN
 # ---------------------------------------------------------
 tab1, tab2 = st.tabs(["🖨️ Dàn Trang A4 (Hàng Loạt)", "✂️ Cắt Ảnh Khung GPLX VNeID"])
 
 # =========================================================
-# TAB 1: DÀN TRANG A4 TỰ ĐỘNG
+# TAB 1: DÀN TRANG A4 TỰ ĐỘNG (Xử lý đồng nhất 1 hoặc nhiều ảnh)
 # =========================================================
 with tab1:
     col_left, col_right = st.columns([1, 1], gap="medium")
@@ -262,10 +262,11 @@ with tab1:
         st.subheader("2. Xem Trước Bản In A4 & Tuỳ Chỉnh")
         preview_area = st.container()
 
+    # Xử lý khi có file tải lên (Cho phép 1 ảnh hoặc nhiều ảnh)
     if uploaded_files:
         num_files = len(uploaded_files)
 
-        # Tính toán số cặp (Lẻ 1 ảnh vẫn xử lý được)
+        # Tính toán số cặp chuẩn xác (1 ảnh -> 1 cặp có nền trắng)
         num_pairs = (num_files + 1) // 2
         card_pairs = []
         a4_canvases = []
@@ -280,13 +281,13 @@ with tab1:
                 i1 = idx * 2
                 i2 = i1 + 1
 
-                # Ảnh thứ 1
+                # Đọc ảnh 1
                 raw_img1 = Image.open(uploaded_files[i1]).convert("RGB")
                 opt_1 = optimize_image_size(raw_img1)
                 crop_1 = crop_card_fast(np.array(opt_1))
                 pil_f = Image.fromarray(crop_1)
 
-                # Ảnh thứ 2 (Nếu thiếu ảnh thì bù nền trắng)
+                # Đọc ảnh 2 (Nếu lẻ ảnh thì bù ảnh trắng)
                 if i2 < num_files:
                     raw_img2 = Image.open(uploaded_files[i2]).convert("RGB")
                     opt_2 = optimize_image_size(raw_img2)
@@ -318,7 +319,7 @@ with tab1:
 
         with download_area:
             if num_files % 2 != 0:
-                st.warning("⚠️ Số lượng ảnh lẻ, hệ thống đã tự ghép ảnh trống làm mặt còn lại.")
+                st.info("ℹ️ Bạn đã tải lên số lượng ảnh lẻ. Hệ thống tự động ghép thêm ô trống ở mặt còn lại.")
             st.success(f"⚡ Đã ghép xong **{len(card_pairs)} bộ**!")
 
             st.download_button(
