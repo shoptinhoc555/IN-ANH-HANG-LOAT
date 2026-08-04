@@ -1,314 +1,419 @@
+import io
+import gc
+import cv2
+import docx
+from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.shared import Inches, Pt
+import numpy as np
+from PIL import Image
 import streamlit as st
-import streamlit.components.v1 as components
 
-# --- CẤU HÌNH TRANG STREAMLIT ---
+# ---------------------------------------------------------
+# CẤU HÌNH TRANG & GIAO DIỆN
+# ---------------------------------------------------------
 st.set_page_config(
-    page_title="Hệ Thống Xếp In Hồ Sơ Hàng Loạt - SHOPTINHOC", 
-    layout="wide", 
-    page_icon="🖨️"
+    page_title="Hệ Thống Xử Lý & Dàn Trang Giấy Tờ",
+    layout="wide",
+    page_icon="🖨️",
 )
 
-# --- GIAO DIỆN VÀ MODULE XẾP IN HÀNG LOẠT ---
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
-    html, body, [data-testid="stAppViewContainer"] {
-        font-family: 'Inter', sans-serif;
-        background-color: #f8fafc;
-    }
-    .brand-container {
-        text-align: center;
-        padding: 15px;
-        background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-        border-radius: 12px;
-        margin-bottom: 20px;
-        color: white;
-    }
-</style>
-<div class="brand-container">
-    <h2 style="margin:0; font-weight:800;">🖨️ HỆ THỐNG XẾP IN HỒ SƠ TỰ ĐỘNG (10 NGƯỜI)</h2>
-    <p style="margin:5px 0 0 0; opacity:0.8; font-size:14px;">Tối ưu sát lề A4 - Xếp vừa khít 7 ảnh 3x4 cm trên 1 hàng ngang</p>
-</div>
-""", unsafe_allow_html=True)
-
-html_code = """<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+st.markdown(
+    """
     <style>
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: #f8fafc; 
-            display: flex; justify-content: center; align-items: flex-start; 
-            min-height: auto; margin: 0; padding: 10px 0;
-        }
-        .container { 
-            background: #ffffff; padding: 25px 35px; border-radius: 16px; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05); max-width: 850px; width: 100%; text-align: center;
-        }
-        .upload-group { display: flex; justify-content: space-between; gap: 20px; margin-bottom: 15px;}
-        .person-box { 
-            flex: 1; border: 2px dashed #cbd5e1; padding: 12px 10px; border-radius: 12px; 
-            background: #f8fafc; transition: all 0.3s ease; position: relative; text-align: center;
-        }
-        .person-box:hover { border-color: #3b82f6; background: #eff6ff;}
-        .person-box h4 { margin: 0 0 8px 0; color: #1e3a8a; font-size: 15px; font-weight: 700;}
-        .name-input {
-            width: 85%; padding: 6px 10px; margin: 6px auto; border: 1px solid #cbd5e1;
-            border-radius: 6px; font-size: 13px; outline: none; text-align: center; display: block;
-        }
-        .name-input:focus { border-color: #3b82f6; box-shadow: 0 0 4px rgba(59,130,246,0.3); }
-        .qty-area {
-            margin-top: 8px; background: #e2e8f0; padding: 8px; border-radius: 8px;
-            display: flex; flex-direction: column; gap: 6px;
-        }
-        .qty-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: bold; color: #334155;}
-        .qty-row input { width: 50px; text-align: center; padding: 4px; border-radius: 4px; border: 1px solid #cbd5e1; font-weight: bold;}
-        .badge { color: white; padding: 3px 6px; border-radius: 4px; font-size: 11px;}
-        .bg-3x4 { background: #2563eb; }
-        .bg-4x6 { background: #16a34a; }
-        input[type="file"] { display: none; }
-        .custom-file-upload { 
-            display: inline-block; padding: 8px 12px; cursor: pointer; background-color: #ffffff; 
-            color: #475569; border-radius: 8px; font-weight: 600; font-size: 12px; 
-            border: 1px solid #cbd5e1; width: 85%; margin: 0 auto;
-        }
-        .custom-file-upload:hover { background-color: #f1f5f9; }
-        .img-wrapper { position: relative; display: inline-block; margin-top: 8px; }
-        .preview { 
-            max-width: 80px; max-height: 100px; border-radius: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); 
-            border: 2px solid #fff; display: none; object-fit: cover;
-        }
-        .clear-btn { 
-            position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; 
-            border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; 
-            font-weight: bold; cursor: pointer; display: none; align-items: center; justify-content: center;
-        }
-        .btn-group { display: flex; gap: 12px; justify-content: center; margin-top: 25px;}
-        .btn { 
-            border-radius: 50px; padding: 14px 20px; font-size: 14px; font-weight: 700; 
-            text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; color: white; border: none; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: all 0.3s ease; flex: 1; 
-        }
-        #previewBtn { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); }
-        #downloadBtn { background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); display: none; }
-        #directPrintBtn { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); display: none; }
-        #previewContainer { display: none; margin-top: 30px; border-top: 2px dashed #e2e8f0; padding-top: 20px; }
-        #previewContainer h4 { color: #334155; margin-bottom: 20px; font-weight: 700;}
-        .a4-page-preview {
-            position: relative; width: 100%; max-width: 480px; background: white; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15); margin: 0 auto 30px auto; 
-            border: 1px solid #cbd5e1; overflow: hidden; border-radius: 2px;
-            box-sizing: border-box;
-        }
-        .label-text-style {
-            position: absolute; width: 100%; text-align: center; color: #333;
-            font-family: Arial, sans-serif; font-weight: bold; overflow: hidden; white-space: nowrap;
-        }
+    .main-header {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1E3A8A;
+        margin-bottom: 0.2rem;
+    }
+    .stDownloadButton button {
+        width: 100%;
+        background-color: #16A34A !important;
+        color: white !important;
+        font-weight: bold !important;
+        font-size: 1.05rem !important;
+        border-radius: 8px !important;
+        padding: 0.75rem 1rem !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .stDownloadButton button:hover {
+        background-color: #15803D !important;
+    }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-</head>
-<body>
-    <div class="container">
-        <!-- Hàng 1 đến 5 -->
-        <script>
-            let htmlInputs = '';
-            for(let i = 1; i <= 10; i+=2) {
-                htmlInputs += `
-                <div class="upload-group">
-                    <div class="person-box">
-                        <h4>👤 Người thứ ${i}</h4>
-                        <input type="text" id="name${i}" class="name-input" placeholder="Nhập tên học viên...">
-                        <label for="imgInput${i}" class="custom-file-upload" id="labelInput${i}">📁 Chọn Ảnh...</label>
-                        <input type="file" id="imgInput${i}" accept="image/png, image/jpeg, image/jpg">
-                        <center><div class="img-wrapper"><img id="preview${i}" class="preview" alt="Preview ${i}"><button id="clearBtn${i}" class="clear-btn">✖</button></div></center>
-                        <div class="qty-area">
-                            <div class="qty-row"><span><span class="badge bg-3x4">3x4</span> SL:</span><input type="number" id="qty3x4_${i}" value="${i <= 2 ? 8 : 0}" min="0" max="28"></div>
-                            <div class="qty-row"><span><span class="badge bg-4x6">4x6</span> SL:</span><input type="number" id="qty4x6_${i}" value="0" min="0" max="28"></div>
-                        </div>
-                    </div>
-                    <div class="person-box">
-                        <h4>👤 Người thứ ${i+1}</h4>
-                        <input type="text" id="name${i+1}" class="name-input" placeholder="Nhập tên học viên...">
-                        <label for="imgInput${i+1}" class="custom-file-upload" id="labelInput${i+1}">📁 Chọn Ảnh...</label>
-                        <input type="file" id="imgInput${i+1}" accept="image/png, image/jpeg, image/jpg">
-                        <center><div class="img-wrapper"><img id="preview${i+1}" class="preview" alt="Preview ${i+1}"><button id="clearBtn${i+1}" class="clear-btn">✖</button></div></center>
-                        <div class="qty-area">
-                            <div class="qty-row"><span><span class="badge bg-3x4">3x4</span> SL:</span><input type="number" id="qty3x4_${i+1}" value="${i <= 2 ? 8 : 0}" min="0" max="28"></div>
-                            <div class="qty-row"><span><span class="badge bg-4x6">4x6</span> SL:</span><input type="number" id="qty4x6_${i+1}" value="0" min="0" max="28"></div>
-                        </div>
-                    </div>
-                </div>`;
-            }
-            document.write(htmlInputs);
-        </script>
+""",
+    unsafe_allow_html=True,
+)
 
-        <div class="btn-group">
-            <button id="previewBtn" class="btn">👁️ Xem Trước Bản Xếp</button>
-            <button id="downloadBtn" class="btn">⬇️ Tải Xuống PDF</button>
-            <button id="directPrintBtn" class="btn">🖨️ Tiến Hành In</button>
-        </div>
-        <div id="previewContainer">
-            <h4>📄 MÔ PHỎNG TRANG IN CHUẨN A4</h4>
-            <div id="pdfIframeContainer"></div>
-        </div>
-    </div>
-    <script>
-        let dataStore = Array(11).fill(null);
-        let typeStore = Array(11).fill('JPEG');
+st.markdown('<div class="main-header">🖨️ Xử Lý & Dàn Trang Giấy Tờ Super Fast</div>', unsafe_allow_html=True)
 
-        function handleImageUpload(inputId, previewId, clearBtnId, labelId, personNum) {
-            document.getElementById(inputId).addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    typeStore[personNum] = (file.type === 'image/png') ? 'PNG' : 'JPEG';
+# Quản lý Session State
+if "uploader_key" not in st.session_state:
+    st.session_state["uploader_key"] = 0
+if "swap_dict" not in st.session_state:
+    st.session_state["swap_dict"] = {}
 
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        dataStore[personNum] = event.target.result;
+def clear_all_files():
+    st.session_state["uploader_key"] += 1
+    st.session_state["swap_dict"] = {}
 
-                        const imgElement = document.getElementById(previewId);
-                        imgElement.src = event.target.result;
-                        imgElement.style.display = 'block';
-                        document.getElementById(clearBtnId).style.display = 'flex';
-                        document.getElementById(labelId).innerHTML = '🔄 Đổi Ảnh';
-                    }
-                    reader.readAsDataURL(file);
-                }
-            });
-            document.getElementById(clearBtnId).addEventListener('click', function() {
-                document.getElementById(inputId).value = "";
-                document.getElementById(previewId).style.display = 'none';
-                document.getElementById(previewId).src = "";
-                this.style.display = 'none';
-                document.getElementById(labelId).innerHTML = '📁 Chọn Ảnh...';
-                dataStore[personNum] = null;
+def toggle_swap_pair(pair_index):
+    current_state = st.session_state["swap_dict"].get(pair_index, False)
+    st.session_state["swap_dict"][pair_index] = not current_state
 
-                document.getElementById('previewContainer').style.display = 'none';
-                document.getElementById('downloadBtn').style.display = 'none';
-                document.getElementById('directPrintBtn').style.display = 'none';
-            });
-        }
+# ---------------------------------------------------------
+# THUẬT TOÁN XỬ LÝ ẢNH CHUNG
+# ---------------------------------------------------------
+def optimize_image_size(pil_img, max_dim=1600):
+    w, h = pil_img.size
+    if max(w, h) > max_dim:
+        scale = max_dim / float(max(w, h))
+        return pil_img.resize((int(w * scale), int(h * scale)), Image.Resampling.LANCZOS)
+    return pil_img
 
-        for(let i = 1; i <= 10; i++) {
-            handleImageUpload(`imgInput${i}`, `preview${i}`, `clearBtn${i}`, `labelInput${i}`, i);
-        }
+def crop_card_fast(image_np):
+    h_img, w_img, _ = image_np.shape
+    gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
-        function getPersonsData() {
-            let list = [];
-            for(let i = 1; i <= 10; i++) {
-                let q3x4 = parseInt(document.getElementById(`qty3x4_${i}`).value) || 0;
-                let q4x6 = parseInt(document.getElementById(`qty4x6_${i}`).value) || 0;
-                let pName = document.getElementById(`name${i}`).value.trim();
-                if (dataStore[i] && (q3x4 > 0 || q4x6 > 0)) {
-                    list.push({ data: dataStore[i], type: typeStore[i], qty3x4: q3x4, qty4x6: q4x6, name: pName });
-                }
-            }
-            return list;
-        }
+    best_rect, max_area = None, 0
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area > (w_img * h_img * 0.10):
+            x, y, w, h = cv2.boundingRect(cnt)
+            aspect_ratio = float(w) / h
+            if 1.2 <= aspect_ratio <= 1.95 and (w < w_img * 0.98):
+                if area > max_area:
+                    max_area = area
+                    best_rect = (x, y, w, h)
 
-        function buildLayoutData(persons) {
-            const a4W = 210, a4H = 297;
-            let gapX = 0.2, gapY = 0.5, marginX = 1.0, marginY = 1.5;
-            let pages = [], currentPage = [], curX = marginX, curY = marginY;
-            let maxRowHeight = 0;
+    if best_rect:
+        x, y, w, h = best_rect
+        return image_np[max(0, y - 4):min(h_img, y + h + 8), max(0, x - 4):min(w_img, x + w + 8)]
+    return image_np
 
-            let allItems = [];
-            persons.forEach((person) => {
-                for (let i = 0; i < person.qty3x4; i++) {
-                    allItems.push({ data: person.data, type: person.type, w: 29.0, h: 39.0, name: person.name });
-                }
-                for (let i = 0; i < person.qty4x6; i++) {
-                    allItems.push({ data: person.data, type: person.type, w: 39.0, h: 59.0, name: person.name });
-                }
-            });
+def add_card_row_to_word(doc, pil_front, pil_back):
+    table = doc.add_table(rows=1, cols=2)
+    table.alignment = WD_TABLE_ALIGNMENT.CENTER
 
-            allItems.forEach((item) => {
-                if (Math.round((curX + item.w) * 10) > Math.round((a4W - marginX) * 10)) {
-                    curX = marginX;
-                    curY += maxRowHeight + gapY;
-                    maxRowHeight = 0;
-                }
+    buf_front, buf_back = io.BytesIO(), io.BytesIO()
+    pil_front.save(buf_front, format="PNG", optimize=True)
+    pil_back.save(buf_back, format="PNG", optimize=True)
+    buf_front.seek(0); buf_back.seek(0)
 
-                if (Math.round((curY + item.h) * 10) > Math.round((a4H - marginY) * 10)) {
-                    pages.push(currentPage);
-                    currentPage = [];
-                    curX = marginX;
-                    curY = marginY;
-                    maxRowHeight = 0;
-                }
+    cell_f = table.cell(0, 0)
+    p_f = cell_f.paragraphs[0]
+    p_f.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_f.add_run().add_picture(buf_front, width=Inches(3.35))
 
-                currentPage.push({ data: item.data, type: item.type, x: curX, y: curY, w: item.w, h: item.h, name: item.name });
+    cell_b = table.cell(0, 1)
+    p_b = cell_b.paragraphs[0]
+    p_b.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p_b.add_run().add_picture(buf_back, width=Inches(3.35))
 
-                if (item.h > maxRowHeight) {
-                    maxRowHeight = item.h;
-                }
+    p_space = doc.add_paragraph()
+    p_space.paragraph_format.space_after = Pt(20)
 
-                curX += item.w + gapX;
-            });
+def create_multi_docx(card_pairs):
+    doc = docx.Document()
+    for section in doc.sections:
+        section.top_margin = Inches(0.5)
+        section.bottom_margin = Inches(0.5)
+        section.left_margin = Inches(0.5)
+        section.right_margin = Inches(0.5)
 
-            if (currentPage.length > 0) pages.push(currentPage);
-            return pages;
-        }
+    for i, (pil_front, pil_back) in enumerate(card_pairs):
+        if i > 0 and i % 2 == 0:
+            doc.add_page_break()
+        add_card_row_to_word(doc, pil_front, pil_back)
 
-        document.getElementById('previewBtn').addEventListener('click', function() {
-            let persons = getPersonsData();
-            if (persons.length === 0) return alert("Vui lòng tải ảnh lên và nhập số lượng!");
-            let pages = buildLayoutData(persons);
-            let pagesHtml = '';
+    doc_io = io.BytesIO()
+    doc.save(doc_io)
+    doc_io.seek(0)
+    return doc_io
 
-            pages.forEach(page => {
-                pagesHtml += `<div class="a4-page-preview" style="aspect-ratio: 210/297; border: 1px solid #777; background:#fff; margin-bottom:20px; position:relative;">`;
-                page.forEach(img => {
-                    let pLeft = (img.x / 210) * 100 + '%';
-                    let pTop = (img.y / 297) * 100 + '%';
-                    let pWidth = (img.w / 210) * 100 + '%';
-                    let pHeight = (img.h / 297) * 100 + '%';
-                    pagesHtml += `<img src="${img.data}" style="position: absolute; left: ${pLeft}; top: ${pTop}; width: ${pWidth}; height: ${pHeight}; object-fit: cover; box-sizing: border-box;">`;
-                    if (img.name) {
-                        let labelTop = ((img.y + img.h - 3.2) / 297) * 100 + '%';
-                        let labelFontSize = (img.w < 35) ? '8px' : '9px';
-                        pagesHtml += `<div class="label-text-style" style="left: ${pLeft}; top: ${labelTop}; font-size: ${labelFontSize}; background: rgba(255,255,255,0.8); height:13px; line-height:13px;">${img.name}</div>`;
-                    }
-                });
-                pagesHtml += `</div>`;
-            });
-            document.getElementById('pdfIframeContainer').innerHTML = pagesHtml;
-            document.getElementById('previewContainer').style.display = 'block';
-            document.getElementById('downloadBtn').style.display = 'inline-block';
-            document.getElementById('directPrintBtn').style.display = 'inline-block';
-        });
+def create_single_cropped_docx(pil_cropped_img):
+    doc = docx.Document()
+    for section in doc.sections:
+        section.top_margin = Inches(0.5)
+        section.bottom_margin = Inches(0.5)
+        section.left_margin = Inches(0.5)
+        section.right_margin = Inches(0.5)
 
-        function generateJsPDFObject() {
-            let persons = getPersonsData();
-            const { jsPDF } = window.jspdf;
-            let doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-            let pages = buildLayoutData(persons);
-            pages.forEach((page, pageIdx) => {
-                if (pageIdx > 0) doc.addPage();
-                page.forEach(img => {
-                    doc.addImage(img.data, img.type, img.x, img.y, img.w, img.h);
-                    doc.setDrawColor(225, 225, 225); doc.setLineWidth(0.08); doc.rect(img.x, img.y, img.w, img.h, 'S');
-                    if (img.name) {
-                        doc.setFillColor(255, 255, 255); doc.rect(img.x + 0.2, img.y + img.h - 3.0, img.w - 0.4, 2.8, 'F');
-                        doc.setTextColor(60, 60, 60); let fSize = (img.w < 35) ? 5.5 : 6.5;
-                        doc.setFontSize(fSize); doc.setFont("Helvetica", "bold");
-                        doc.text(img.name, img.x + (img.w / 2), img.y + img.h - 0.8, { align: 'center' });
-                    }
-                });
-            });
-            return doc;
-        }
+    buf = io.BytesIO()
+    pil_cropped_img.save(buf, format="PNG", optimize=True)
+    buf.seek(0)
 
-        document.getElementById('downloadBtn').addEventListener('click', function() { generateJsPDFObject().save('SmartStudio_Print_Layout.pdf'); });
-        document.getElementById('directPrintBtn').addEventListener('click', function() {
-            let doc = generateJsPDFObject(); const blobUrl = doc.output('bloburl'); const printWindow = window.open(blobUrl, '_blank');
-            if (printWindow) { printWindow.onload = function() { printWindow.focus(); printWindow.print(); }; }
-            else { alert("Vui lòng cho phép Pop-up trên trình duyệt để in trực tiếp!"); }
-        });
-    </script>
-</body>
-</html>"""
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.add_run().add_picture(buf, width=Inches(3.5))
 
-components.html(html_code, height=1850, scrolling=True)
+    doc_io = io.BytesIO()
+    doc.save(doc_io)
+    doc_io.seek(0)
+    return doc_io
+
+def create_a4_canvas_horizontal(card_pairs_chunk):
+    a4_w, a4_h = 1240, 1754
+    canvas = Image.new("RGB", (a4_w, a4_h), "white")
+    card_w, spacing_x = 540, 40
+    start_x = (a4_w - (card_w * 2 + spacing_x)) // 2
+    y_positions = [180, 920]
+
+    for idx, (pil_front, pil_back) in enumerate(card_pairs_chunk):
+        if idx >= 2: break
+        y_pos = y_positions[idx]
+        ratio_f = card_w / pil_front.width
+        f_resized = pil_front.resize((card_w, int(pil_front.height * ratio_f)), Image.Resampling.LANCZOS)
+        ratio_b = card_w / pil_back.width
+        b_resized = pil_back.resize((card_w, int(pil_back.height * ratio_b)), Image.Resampling.LANCZOS)
+
+        canvas.paste(f_resized, (start_x, y_pos))
+        canvas.paste(b_resized, (start_x + card_w + spacing_x, y_pos))
+
+    return canvas
+
+# ---------------------------------------------------------
+# THUẬT TOÁN CẮT KHUNG VNeID
+# ---------------------------------------------------------
+def crop_vneid_combined_block(pil_img):
+    img_np = np.array(pil_img)
+    h_img, w_img, _ = img_np.shape
+    gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+    blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    _, thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    contours, _ = cv2.findContours(thresh, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    
+    card_boxes = []
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if area > (w_img * h_img * 0.05):
+            x, y, w, h = cv2.boundingRect(cnt)
+            aspect_ratio = float(w) / h
+            if 1.2 <= aspect_ratio <= 1.95 and w < w_img * 0.98:
+                card_boxes.append((x, y, w, h))
+
+    filtered_boxes = []
+    card_boxes = sorted(card_boxes, key=lambda b: b[1])
+    for box in card_boxes:
+        if not any(abs(box[1] - f[1]) < 30 for f in filtered_boxes):
+            filtered_boxes.append(box)
+
+    if len(filtered_boxes) >= 2:
+        b1, b2 = filtered_boxes[0], filtered_boxes[1]
+        min_x = min(b1[0], b2[0])
+        max_x = max(b1[0] + b1[2], b2[0] + b2[2])
+        min_y = min(b1[1], b2[1])
+        max_y = max(b1[1] + b1[3], b2[1] + b2[3])
+
+        crop_np = img_np[
+            max(0, min_y - 6) : min(h_img, max_y + 14), 
+            max(0, min_x - 6) : min(w_img, max_x + 6)
+        ]
+        return Image.fromarray(crop_np)
+
+    y1, y2 = int(h_img * 0.11), int(h_img * 0.67)
+    x1, x2 = int(w_img * 0.035), int(w_img * 0.965)
+    
+    crop_np = img_np[y1:y2, x1:x2]
+    return Image.fromarray(crop_np)
+
+
+# ---------------------------------------------------------
+# KHỞI TẠO TABS GIAO DIỆN (ĐÃ ĐẶT TRƯỚC WITH TAB)
+# ---------------------------------------------------------
+tab1, tab2 = st.tabs(["🖨️ Dàn Trang A4 (Hàng Loạt)", "✂️ Cắt Ảnh Khung GPLX VNeID"])
+
+# =========================================================
+# TAB 1: DÀN TRANG A4 TỰ ĐỘNG
+# =========================================================
+with tab1:
+    col_left, col_right = st.columns([1, 1], gap="medium")
+
+    with col_left:
+        st.subheader("1. Tải Ảnh & Xuất File")
+        
+        doc_type = st.radio(
+            "📋 Loại giấy tờ:",
+            ["CCCD", "GPLX"],
+            horizontal=True
+        )
+
+        col_up_title, col_btn_clear = st.columns([0.65, 0.35])
+        with col_up_title:
+            st.write("📥 Tải lên tất cả ảnh:")
+        with col_btn_clear:
+            st.button("🧹 Làm mới", on_click=clear_all_files, use_container_width=True)
+
+        uploaded_files = st.file_uploader(
+            "Tải lên tất cả ảnh:",
+            type=["jpg", "jpeg", "png"],
+            accept_multiple_files=True,
+            key=f"file_uploader_{st.session_state['uploader_key']}",
+            label_visibility="collapsed"
+        )
+
+        download_area = st.container()
+
+    with col_right:
+        st.subheader("2. Xem Trước Bản In A4 & Tuỳ Chỉnh")
+        preview_area = st.container()
+
+    if uploaded_files:
+        num_files = len(uploaded_files)
+
+        # Tính toán số cặp (Lẻ 1 ảnh vẫn xử lý được)
+        num_pairs = (num_files + 1) // 2
+        card_pairs = []
+        a4_canvases = []
+
+        with col_left:
+            progress_bar = st.progress(0)
+            status_text = st.empty()
+
+            for idx in range(num_pairs):
+                status_text.text(f"⏳ Đang xử lý Bộ {idx + 1}/{num_pairs}...")
+                
+                i1 = idx * 2
+                i2 = i1 + 1
+
+                # Ảnh thứ 1
+                raw_img1 = Image.open(uploaded_files[i1]).convert("RGB")
+                opt_1 = optimize_image_size(raw_img1)
+                crop_1 = crop_card_fast(np.array(opt_1))
+                pil_f = Image.fromarray(crop_1)
+
+                # Ảnh thứ 2 (Nếu thiếu ảnh thì bù nền trắng)
+                if i2 < num_files:
+                    raw_img2 = Image.open(uploaded_files[i2]).convert("RGB")
+                    opt_2 = optimize_image_size(raw_img2)
+                    crop_2 = crop_card_fast(np.array(opt_2))
+                    pil_b = Image.fromarray(crop_2)
+                    del raw_img2, opt_2, crop_2
+                else:
+                    pil_b = Image.new("RGB", pil_f.size, (255, 255, 255))
+
+                if st.session_state["swap_dict"].get(idx, False):
+                    pil_f, pil_b = pil_b, pil_f
+
+                card_pairs.append((pil_f, pil_b))
+
+                del raw_img1, opt_1, crop_1
+                gc.collect()
+
+                progress_bar.progress((idx + 1) / num_pairs)
+
+            status_text.empty()
+            progress_bar.empty()
+
+        for i in range(0, len(card_pairs), 2):
+            chunk = card_pairs[i:i + 2]
+            canvas = create_a4_canvas_horizontal(chunk)
+            a4_canvases.append(canvas)
+
+        docx_io = create_multi_docx(card_pairs)
+
+        with download_area:
+            if num_files % 2 != 0:
+                st.warning("⚠️ Số lượng ảnh lẻ, hệ thống đã tự ghép ảnh trống làm mặt còn lại.")
+            st.success(f"⚡ Đã ghép xong **{len(card_pairs)} bộ**!")
+
+            st.download_button(
+                label=f"📝 TẢI FILE WORD NGAY (.docx)",
+                data=docx_io,
+                file_name=f"{doc_type}_In_A4.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+            
+            img_io = io.BytesIO()
+            a4_canvases[0].save(img_io, format="PNG", optimize=True)
+            img_io.seek(0)
+
+            st.download_button(
+                label="🖼️ TẢI ẢNH PNG TRANG 1",
+                data=img_io,
+                file_name=f"{doc_type}_Trang1.png",
+                mime="image/png",
+            )
+
+        with preview_area:
+            st.write("🔄 **Tuỳ chỉnh vị trí cho riêng từng bộ (nếu bị ngược):**")
+            btn_cols = st.columns(min(len(card_pairs), 4))
+            for p_idx in range(len(card_pairs)):
+                is_swapped = st.session_state["swap_dict"].get(p_idx, False)
+                btn_label = f"🔄 Đảo Bộ {p_idx + 1}" + (" (Đã đảo)" if is_swapped else "")
+                btn_cols[p_idx % 4].button(
+                    btn_label, 
+                    key=f"btn_swap_{p_idx}", 
+                    on_click=toggle_swap_pair, 
+                    args=(p_idx,),
+                    use_container_width=True
+                )
+
+            st.markdown("---")
+
+            if len(a4_canvases) > 1:
+                tabs = st.tabs([f"Trang #{i + 1}" for i in range(len(a4_canvases))])
+                for i, tab in enumerate(tabs):
+                    with tab:
+                        st.image(a4_canvases[i], use_container_width=True)
+            else:
+                st.image(a4_canvases[0], use_container_width=True)
+
+
+# =========================================================
+# TAB 2: CẮT KHUNG VNeID CHUẨN MẪU
+# =========================================================
+with tab2:
+    st.subheader("✂️ Cắt Trọn Khung Bằng Lái Xe GPLX VNeID")
+    st.caption("Tải lên ảnh màn hình VNeID, hệ thống sẽ tự động cắt khung chứa 2 thẻ GPLX.")
+
+    col_vneid_up, col_vneid_res = st.columns([1, 1], gap="medium")
+
+    with col_vneid_up:
+        uploaded_vneid = st.file_uploader(
+            "📥 Tải ảnh chụp màn hình GPLX VNeID:",
+            type=["jpg", "jpeg", "png"],
+            key="vneid_uploader"
+        )
+        if uploaded_vneid:
+            raw_vneid_img = Image.open(uploaded_vneid).convert("RGB")
+            st.image(raw_vneid_img, caption="Ảnh gốc VNeID", use_container_width=True)
+
+    with col_vneid_res:
+        if uploaded_vneid:
+            with st.spinner("⏳ Đang nhận diện và cắt khung ảnh..."):
+                cropped_gplx_img = crop_vneid_combined_block(raw_vneid_img)
+
+                buf = io.BytesIO()
+                cropped_gplx_img.save(buf, format="PNG", optimize=True)
+                buf_png = buf.getvalue()
+
+                docx_cropped_io = create_single_cropped_docx(cropped_gplx_img)
+
+                st.markdown("### 📥 Tải về kết quả:")
+                
+                col_dl_word, col_dl_png = st.columns(2)
+                with col_dl_word:
+                    st.download_button(
+                        label="📝 TẢI FILE WORD (.docx)",
+                        data=docx_cropped_io,
+                        file_name="GPLX_VNeID_Cropped.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        use_container_width=True
+                    )
+                with col_dl_png:
+                    st.download_button(
+                        label="🖼️ TẢI ẢNH PNG (.png)",
+                        data=buf_png,
+                        file_name="GPLX_VNeID_Cropped.png",
+                        mime="image/png",
+                        use_container_width=True
+                    )
+
+                st.markdown("---")
+                st.markdown("### 👁️ Xem trước ảnh đã cắt:")
+                st.image(cropped_gplx_img, caption="Khung ảnh GPLX 2 mặt", use_container_width=True)
