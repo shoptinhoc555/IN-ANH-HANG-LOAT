@@ -139,7 +139,7 @@ html_code = """<!DOCTYPE html>
                 <input type="file" id="imgInput1" accept="image/png, image/jpeg, image/jpg">
                 <center><div class="img-wrapper"><img id="preview1" class="preview" alt="Preview 1"><button id="clearBtn1" class="clear-btn">✖</button></div></center>
                 <div class="qty-area">
-                    <div class="qty-row"><span><span class="badge bg-3x4">3x4</span> SL:</span><input type="number" id="qty3x4_1" value="9" min="0" max="24"></div>
+                    <div class="qty-row"><span><span class="badge bg-3x4">3x4</span> SL:</span><input type="number" id="qty3x4_1" value="8" min="0" max="24"></div>
                     <div class="qty-row"><span><span class="badge bg-4x6">4x6</span> SL:</span><input type="number" id="qty4x6_1" value="0" min="0" max="24"></div>
                 </div>
             </div>
@@ -150,7 +150,7 @@ html_code = """<!DOCTYPE html>
                 <input type="file" id="imgInput2" accept="image/png, image/jpeg, image/jpg">
                 <center><div class="img-wrapper"><img id="preview2" class="preview" alt="Preview 2"><button id="clearBtn2" class="clear-btn">✖</button></div></center>
                 <div class="qty-area">
-                    <div class="qty-row"><span><span class="badge bg-3x4">3x4</span> SL:</span><input type="number" id="qty3x4_2" value="9" min="0" max="24"></div>
+                    <div class="qty-row"><span><span class="badge bg-3x4">3x4</span> SL:</span><input type="number" id="qty3x4_2" value="8" min="0" max="24"></div>
                     <div class="qty-row"><span><span class="badge bg-4x6">4x6</span> SL:</span><input type="number" id="qty4x6_2" value="0" min="0" max="24"></div>
                 </div>
             </div>
